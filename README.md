@@ -5,9 +5,7 @@ This script crawls Google's job search functionality. The data is then exported 
 
 ### Use:
 In order to do your own search just change the url based on your own search and run the script.
-
-*Eg.  
-https://www.google.com/search?q=data+scientist+USA&oq=data+sc&aqs=chrome.0.69i59l2j0i433i457j69i59j69i57j69i61l2j69i60.1954j1j1&sourceid=chrome&ie=UTF-8&ibp=htl;jobs&sa=X&ved=2ahUKEwioy4DD3I_uAhVWhlwKHXWZDPAQutcGKAB6BAgFEAQ&sxsrf=ALeKk01QJ1N0hCq5E4yNdSVpAocamk9jcA:1610225255727#htivrt=jobs&htidocid=eaEAKiT_pHnjJGlAAAAAAA%3D%3D&fpstate=tldetail*
+[Example of google job search](https://www.google.com/search?q=data+scientist+USA&oq=data+sc&aqs=chrome.0.69i59l2j0i433i457j69i59j69i57j69i61l2j69i60.1954j1j1&sourceid=chrome&ie=UTF-8&ibp=htl;jobs&sa=X&ved=2ahUKEwioy4DD3I_uAhVWhlwKHXWZDPAQutcGKAB6BAgFEAQ&sxsrf=ALeKk01QJ1N0hCq5E4yNdSVpAocamk9jcA:1610225255727#htivrt=jobs&htidocid=eaEAKiT_pHnjJGlAAAAAAA%3D%3D&fpstate=tldetail*)
 
 Once complete the data will be placed in a .CSV file in the same folder as the script.
 
