@@ -10,7 +10,7 @@ In order to do your own search just change the url based on your own search and 
 Once complete the data will be placed in a .CSV file in the same folder as the script.
 
 ### Common Issues:
-* Running this script too often will lead to a 429 request status. This means you've ran it too often. Wait and run again later. This is more of an issue when coding than actually using as one has to run it quite often.  
-* When opening file in Excel, use Data > From Text/CSV > File Origin = 605001: Unicode(UTF-8)
+* 429 request status. This means the script ran too often and therefore made too many queries to the server. Wait and run again later. This is more of an issue when coding than actually using as it has to be run quite often.  
+* When opening the .CSV file in Excel, use Data > From Text/CSV > File Origin = 605001: Unicode(UTF-8)
 
 
