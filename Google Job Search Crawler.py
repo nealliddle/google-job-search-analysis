@@ -7,13 +7,19 @@
 # - When opening file in Excel, use Data > From Text/CSV > File Origin = 605001: Unicode(UTF-8)
 
 #=====================================================================
+# Todo
+#=====================================================================
+# [ ] Select "show more" in descriptions in order to export all the text
+# [ ] Export the salary features
+
+#=====================================================================
 # Import Libraries
 #=====================================================================
 import requests # gets the information from the site
 from bs4 import BeautifulSoup # html parser
 from selenium import webdriver # handles the request and interactions(scrolling of infinite scroller and buttons)
-import sys, os, time, csv, unidecode
-
+import sys, os, time, csv, unidecode, unicodedata
+    
 #=====================================================================
 # Bypass Blocking Variables
 #=====================================================================
@@ -55,7 +61,8 @@ features_data = []
 def connect_and_parse():
 
     # connect to the site
-    url = "https://www.google.com/search?q=data+scientist+USA&oq=data+scientist+jobs&aqs=chrome..69i57j0i433i457j0i402l2j0i395l4.3309j1j1&sourceid=chrome&ie=UTF-8&ibp=htl;jobs&sa=X&ved=2ahUKEwi9557CpvjtAhVKUMAKHaRHBtgQutcGKAB6BAgDEAQ&sxsrf=ALeKk00B6n8gIck0u29yarMEgr_UT9CMhw:1609420484628#htivrt=jobs&htidocid=JJ-VDq0HcUDG-ZDNAAAAAA%3D%3D&fpstate=tldetail"
+    url = "https://www.google.com/search?q=data+scientist+stellenbosch&ibp=htl;jobs&sa=X&ved=2ahUKEwjx9ODZ45DuAhXLa8AKHdnqAhAQudcGKAJ6BAgEECw&sxsrf=ALeKk00kYaMuUT9C_rf8FpBGufQ6VQOS2w:1610261542231#fpstate=tldetail&htivrt=jobs&htidocid=ChKdp8vqOYGQNwekAAAAAA%3D%3D"
+    # url = "https://www.google.com/search?q=data+scientist+USA&oq=data+scientist+jobs&aqs=chrome..69i57j0i433i457j0i402l2j0i395l4.3309j1j1&sourceid=chrome&ie=UTF-8&ibp=htl;jobs&sa=X&ved=2ahUKEwi9557CpvjtAhVKUMAKHaRHBtgQutcGKAB6BAgDEAQ&sxsrf=ALeKk00B6n8gIck0u29yarMEgr_UT9CMhw:1609420484628#htivrt=jobs&htidocid=JJ-VDq0HcUDG-ZDNAAAAAA%3D%3D&fpstate=tldetail"
     result = requests.get(url, headers=headers, params=params)
 
     # check if connection was made properly
@@ -63,9 +70,6 @@ def connect_and_parse():
 
     # parse site with BeautifulSoup
     soup = BeautifulSoup(result.text,'lxml')
-
-    # find left job postings
-    # div = soup.findAll('div',{'jsname':"DVpPy", 'class': 'hide-focus-ring'})
 
     # start seledium (required for interactions)
     PATH = os.path.dirname(sys.argv[0]) + "\chromedriver.exe"
@@ -98,12 +102,12 @@ def scrollJobs(soup, driver):
         time.sleep(2)
 
         # get left elements
-        soup=BeautifulSoup(driver.page_source, 'lxml')
-        div = soup.findAll('div',{'jsname':"DVpPy", 'class': 'hide-focus-ring'})
+        left_div = driver.find_element_by_xpath('//*[@id="immersive_desktop_root"]/div/div[3]/div[1]')
+        left_jobs = left_div.find_elements_by_xpath('.//*[@jsname="DVpPy"]')
 
         #  checking if there are more jobs when scrolling down
-        new_count = len(div)
-        if(old_count == len(div)):
+        new_count = len(left_jobs)
+        if(old_count == new_count):
             all_jobs_loaded = True
         else:
             old_count = new_count
@@ -113,26 +117,25 @@ def scrollJobs(soup, driver):
     driver.execute_script('arguments[0].scrollTop = arguments[0].scrollHeight*-' + str(counter) , scroll_div)
     
     print("[x] Scrolling complete.")
-    return(div)
+    return(left_jobs)
 
 #..................................................................
 # Get jobs on the left
-def get_left_elements(div):
+def get_left_elements(left_jobs):
     # for each job, get the relevant information in the left element
 
     print("[x] Getting jobs in left div.")
 
-    for x in div:
-        role            = x.findAll('div', {'class': 'BjJfJf PUpOsf'})
-        company         = x.findAll('div', {'class': 'vNEEBe'})
-        location        = x.findAll('div', {'class': 'Qk80Jf'})
-        via             = x.findAll('div', {'class': 'Qk80Jf'})
-        date_posted     = x.findAll('span', {'class': 'SuWscb'})
+    for x in left_jobs:
+        role            = x.find_elements_by_xpath('.//*[@class="BjJfJf PUpOsf"]') 
+        company         = x.find_elements_by_xpath('.//*[@class="vNEEBe"]') 
+        location        = x.find_elements_by_xpath('.//*[@class="Qk80Jf"]') 
+        via             = x.find_elements_by_xpath('.//*[@class="Qk80Jf"]') 
+        date_posted     = x.find_elements_by_xpath('.//*[@class="SuWscb"]')
         try:
-
-            employment_type = x.findAll('span', {'class': 'SuWscb'})[1].text
+            employment_type = x.find_elements_by_xpath('.//*[@class="SuWscb"]')[1].text 
         except:
-            employment_type = "Not Stated"
+            employment_type = ""
 
         # append information to array
         features_data.append([
@@ -142,7 +145,8 @@ def get_left_elements(div):
             (via[1].text).split("via ")[1],
             date_posted[0].text,
             employment_type,
-            ""]) # this is a placeholder for the description which we get on the right-hand side of the page
+            "",  # placeholder for description
+            ""]) # placeholder for reviews
 
     print("[x] All jobs' basic data captured.")  
 
@@ -154,29 +158,38 @@ def get_right_elements(driver):
 
     # xpath to jobs on left element
     left_div = driver.find_element_by_xpath('//*[@id="immersive_desktop_root"]/div/div[3]/div[1]')
-    left_jobs = left_div.find_elements_by_xpath('.//*[@class="hide-focus-ring"]')
 
+    # left_jobs = left_div.find_elements_by_xpath('.//*[@class="hide-focus-ring"]')
+    left_jobs = left_div.find_elements_by_xpath('.//*[@jsname="DVpPy"]')
+    
+
+    counter = 0
+    reviews_list = []
     # For each job on left element
     for cl in left_jobs:
         
         # click on the job
         cl.click()
 
-        right_div = driver.find_element_by_xpath('//*[@id="gws-plugins-horizon-jobs__job_details_page"]/div')
+        # add description to the array for csv
+        description     = driver.find_element_by_xpath('/html/body/div[2]/div/div[2]/div[1]/div/div/div[3]/div[2]/div/div[1]/div/div/div[5]')
+        features_data[counter][6] = description.text
 
-        # get right elements
-        soup=BeautifulSoup(driver.page_source, 'lxml')
-        div = soup.findAll('div',{'class': 'pE8vnd avtvi'})
+        review_list = []
 
-        counter = 0
-        for x in div:
-            
-            # only capturing the following as we already captured the rest via the left element
-            description         = x.findAll('span', {'class': 'HBvzbc'})[0].text
-
-            # adding description to the rest of the features
-            features_data[counter][6] = description
-            counter += 1
+        # get the div which contains the reviews
+        right_elements  = driver.find_elements_by_xpath('.//*[@id="gws-plugins-horizon-jobs__job_details_page"]/div/div[9]')
+        
+        # go through all the reviews
+        for re in right_elements:
+            element_text = re.text
+            if(len(element_text)>0 and element_text.startswith("More")!=True):
+                review_list.append(unicodedata.normalize("NFKD", element_text))
+        
+        
+        # add reviews to the array for csv
+        features_data[counter][7] = review_list
+        counter += 1    
 
     print("[x] Job details (finally) scrapped.")  
 
@@ -187,12 +200,12 @@ def export_to_csv():
     with open('job_list.csv', 'w', newline='', encoding='utf-8') as f: 
 
         # creating column names
-        fieldnames =["Role", "Company", "Location", "Via", "Date Posted", "Employment Type", "Description"]
+        fieldnames =["Role", "Company", "Location", "Via", "Date Posted", "Employment Type", "Description", "Company Reviews"]
         thewriter = csv.DictWriter(f, fieldnames=fieldnames)
         
         # run through features and add each as a row
         for i in features_data:
-            thewriter.writerow({"Role" : (i[0]), "Company" : (i[1]), "Location" : (i[2]), "Via" : (i[3]), "Date Posted" : (i[4]), "Employment Type" : (i[5]), "Description" : (i[6])})
+            thewriter.writerow({"Role" : (i[0]), "Company" : (i[1]), "Location" : (i[2]), "Via" : (i[3]), "Date Posted" : (i[4]), "Employment Type" : (i[5]), "Description" : (i[6]), "Company Reviews" : i[7]})
 
     print("[x] All data exported to CSV.")  
     print("Script Finished")
